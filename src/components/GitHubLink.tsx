@@ -26,7 +26,7 @@ export default function GitHubLink({ url, className = "h-4 w-4", onClick }: GitH
     <button
       onClick={handleClick}
       aria-label="Open repository website"
-      className="shrink-0 text-slate-500 hover:text-white transition cursor-pointer"
+      className="github-button"
       title="Open on GitHub"
     >
       <svg

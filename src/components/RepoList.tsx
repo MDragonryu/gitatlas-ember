@@ -12,18 +12,17 @@ interface RepoListProps {
 export default function RepoList({ repos, onFetch, onPullRebase, onPush, onOpen }: RepoListProps) {
   if (repos.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-16 text-slate-500">
-        <p className="text-lg">No repositories found</p>
-        <p className="text-sm mt-1">Click "Scan for Repos" to discover Git repositories</p>
+      <div className="empty-state">
+        <div>
+          <h2>No repositories found</h2>
+          <p>Scan a root to discover Git repositories.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className="grid gap-3"
-      style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}
-    >
+    <div className="repo-grid">
       {repos.map((repo) => (
         <RepoCard
           key={repo.path}

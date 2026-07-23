@@ -5,7 +5,7 @@ interface DiffViewerProps {
 export default function DiffViewer({ diff }: DiffViewerProps) {
   if (!diff) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-slate-500">
+      <div className="diff-empty">
         Select a file or commit to view diff
       </div>
     );
@@ -14,17 +14,18 @@ export default function DiffViewer({ diff }: DiffViewerProps) {
   const lines = diff.split("\n");
 
   return (
-    <div className="h-full overflow-auto">
-      <pre className="p-3 text-xs leading-5 font-mono">
+    <div className="diff-viewer">
+      <pre className="diff-code" aria-label="Unified diff">
         {lines.map((line, i) => {
-          let cls = "text-slate-400";
-          if (line.startsWith("+")) cls = "text-green-400 bg-green-950/30";
-          else if (line.startsWith("-")) cls = "text-red-400 bg-red-950/30";
+          let cls = "diff-line";
+          if (line.startsWith("+")) cls += " diff-add";
+          else if (line.startsWith("-")) cls += " diff-remove";
+          else if (line.startsWith("@@")) cls += " diff-hunk";
 
           return (
-            <div key={i} className={cls}>
+            <span key={i} className={cls}>
               {line || " "}
-            </div>
+            </span>
           );
         })}
       </pre>

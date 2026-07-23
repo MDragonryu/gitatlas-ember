@@ -47,77 +47,76 @@ export default function RepoCard({ repo, onFetch, onPullRebase, onPush, onOpen }
   };
 
   return (
-    <div
-      className={`flex flex-col gap-3 rounded-lg border p-4 transition hover:border-slate-500 ${
-        repo.behind > 0
-          ? "border-red-700/60 bg-red-950/20"
-          : "border-slate-700 bg-slate-800/50"
-      }`}
-    >
-      <div
-        className="flex flex-col gap-3 cursor-pointer"
+    <article className={`repo-card${repo.behind > 0 ? " attention" : ""}`}>
+      <button
+        type="button"
+        className="repo-main"
         onClick={() => onOpen(repo)}
+        aria-label={`Open ${repo.name} repository`}
       >
-        <div className="flex items-start justify-between gap-2">
+        <div className="repo-title-row">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5">
-              <p className="truncate font-medium text-slate-100">{repo.name}</p>
-              {gitUrlToWeb(repo.remote_url) && (
-                <GitHubLink url={gitUrlToWeb(repo.remote_url)!} className="h-3.5 w-3.5" />
-              )}
+            <div className="repo-title">
+              <h2>{repo.name}</h2>
             </div>
-            <p className="truncate text-xs text-slate-500 font-mono" title={repo.path}>
+            <p className="repo-path" title={repo.path}>
               {repo.path}
             </p>
           </div>
           <StatusBadge health={repo.health} />
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="truncate rounded bg-slate-700/60 px-2 py-0.5 text-xs font-mono text-blue-300">
+        <div className="branch-row">
+          <span className="branch-pill">
             {repo.branch}
           </span>
           {repo.behind > 0 && (
-            <span className="rounded bg-red-900/60 px-2 py-0.5 text-xs font-medium text-red-300">
+            <span className="signal danger">
               ↓{repo.behind} behind origin
             </span>
           )}
         </div>
 
-        <div className="flex items-center gap-3 text-xs text-slate-400">
+        <div className="repo-signals">
           {repo.ahead > 0 && (
-            <span className="text-green-400" title="Commits ahead of origin">
+            <span className="signal success" title="Commits ahead of origin">
               ↑{repo.ahead} ahead
             </span>
           )}
           {repo.dirty_files > 0 && (
-            <span className="text-yellow-400" title="Dirty files">
+            <span className="signal warning" title="Dirty files">
               ~{repo.dirty_files} changed
             </span>
           )}
           {repo.stash_count > 0 && (
-            <span className="text-purple-400" title="Stashes">
+            <span className="signal number" title="Stashes">
               {repo.stash_count} stash
             </span>
           )}
           {repo.ahead === 0 && repo.behind === 0 && repo.dirty_files === 0 && repo.stash_count === 0 && (
-            <span className="text-slate-500">Up to date</span>
+            <span className="signal">Up to date</span>
           )}
         </div>
-      </div>
+      </button>
+
+      {gitUrlToWeb(repo.remote_url) && (
+        <div className="repo-external">
+          <GitHubLink url={gitUrlToWeb(repo.remote_url)!} className="h-3.5 w-3.5" />
+        </div>
+      )}
 
       {actionError && (
-        <p className="text-xs text-red-400 truncate" title={actionError}>
+        <p className="repo-error" role="alert" title={actionError}>
           {actionError}
         </p>
       )}
 
-      <div className="flex items-center gap-2 border-t border-slate-700/50 pt-3">
+      <div className="card-actions">
         <ActionButton label="Fetch" busy={busy} onClick={() => run("Fetch", onFetch)} />
         <ActionButton label="Pull" busy={busy} onClick={() => run("Pull", onPullRebase)} />
         <ActionButton label="Push" busy={busy} onClick={() => run("Push", onPush)} />
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -137,7 +136,7 @@ function ActionButton({
     <button
       onClick={onClick}
       disabled={disabled}
-      className="flex-1 rounded bg-slate-700/60 px-2 py-1 text-xs font-medium text-slate-300 transition hover:bg-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+      className="button compact subtle"
     >
       {isThis ? `${label}...` : label}
     </button>

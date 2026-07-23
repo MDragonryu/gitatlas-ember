@@ -8,6 +8,7 @@ import CommitForm from "./CommitForm";
 import BranchPanel from "./BranchPanel";
 import StashPanel from "./StashPanel";
 import ReadmeViewer from "./ReadmeViewer";
+import ThemeSwitcher from "../ThemeSwitcher";
 
 type Tab = "changes" | "history" | "branches" | "stashes" | "readme";
 
@@ -234,57 +235,60 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
   const stagedCount = detail.changes.filter((c) => c.staged).length;
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-slate-900">
+    <div className="detail-shell">
       {/* Header */}
-      <header className="flex items-center gap-4 border-b border-slate-700 px-4 py-3 shrink-0">
+      <header className="detail-header">
         <button
           onClick={onClose}
-          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200 transition"
+          className="icon-button"
           title="Back to dashboard (Esc)"
+          aria-label="Back to dashboard"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
             <path d="M13 4L7 10L13 16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
 
-        <div className="min-w-0">
-          <h2 className="text-lg font-semibold text-white truncate">{repo.name}</h2>
-          <p className="text-xs text-slate-500 font-mono truncate">{repo.path}</p>
+        <div className="detail-identity">
+          <h1>{repo.name}</h1>
+          <p>{repo.path}</p>
         </div>
 
-        <span className="rounded bg-slate-700/60 px-2 py-0.5 text-xs font-mono text-blue-300 shrink-0">
+        <span className="branch-pill">
           {repo.branch}
         </span>
 
         {/* Git profile */}
         {detail.profile && (
-          <div className="relative">
+          <div className="profile">
             <button
               onClick={() => setShowProfileEdit(!showProfileEdit)}
-              className="text-xs text-slate-400 hover:text-slate-200 transition truncate max-w-32"
+              className="profile-trigger"
               title={`${detail.profile.name} <${detail.profile.email}>`}
             >
               {detail.profile.name || "Set profile"}
             </button>
             {showProfileEdit && (
-              <div className="absolute top-full left-0 mt-1 z-50 rounded border border-slate-700 bg-slate-800 p-3 shadow-lg">
-                <div className="flex flex-col gap-2 w-56">
+              <div className="popover">
+                <div className="form-stack">
                   <input
                     value={profileName}
                     onChange={(e) => setProfileName(e.target.value)}
                     placeholder="user.name"
-                    className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+                    aria-label="Git user name"
+                    className="control compact mono"
                   />
                   <input
                     value={profileEmail}
                     onChange={(e) => setProfileEmail(e.target.value)}
                     placeholder="user.email"
+                    aria-label="Git user email"
                     onKeyDown={(e) => e.key === "Enter" && handleSaveProfile()}
-                    className="rounded border border-slate-700 bg-slate-900 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+                    className="control compact mono"
                   />
                   <button
                     onClick={handleSaveProfile}
-                    className="rounded bg-indigo-600 px-2 py-1 text-xs text-white hover:bg-indigo-500"
+                    className="button compact primary"
                   >
                     Save
                   </button>
@@ -295,7 +299,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
         )}
 
         {/* Remote operations */}
-        <div className="flex items-center gap-1.5 ml-4">
+        <div className="remote-actions">
           <HeaderButton
             label="Fetch"
             loading={detail.loading}
@@ -319,7 +323,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
           />
           <button
             onClick={detail.openPullRequest}
-            className="rounded px-2.5 py-1 text-xs font-medium bg-green-700/80 text-green-100 hover:bg-green-600 transition"
+            className="button compact success"
           >
             Create PR
           </button>
@@ -327,24 +331,23 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
 
         {/* Loading action indicator */}
         {detail.loadingAction && (
-          <span className="text-xs text-blue-400 animate-pulse shrink-0">
+          <span className="activity-label" role="status">
             {detail.loadingAction}
           </span>
         )}
 
-        <div className="ml-auto" />
+        <ThemeSwitcher />
 
         {/* Tabs */}
-        <nav className="flex items-center gap-1">
+        <nav className="detail-tabs" role="tablist" aria-label="Repository sections">
           {tabs.map((tab, i) => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key)}
-              className={`rounded px-3 py-1.5 text-sm font-medium transition ${
-                activeTab === tab.key
-                  ? "bg-slate-700 text-white"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-              }`}
+              role="tab"
+              id={`tab-${tab.key}`}
+              aria-controls={`panel-${tab.key}`}
+              aria-selected={activeTab === tab.key}
               title={`${tab.label} (${i + 1})`}
             >
               {tab.label}
@@ -355,33 +358,40 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
 
       {/* Toast notifications */}
       {detail.successMessage && (
-        <div className="mx-4 mt-2 rounded bg-green-900/30 border border-green-800 px-3 py-2 text-xs text-green-300 shrink-0 flex items-center gap-2">
+        <div className="message success detail-message" role="status">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
             <path d="M3 7L6 10L11 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          {detail.successMessage}
+          <strong>Success</strong>
+          <span>{detail.successMessage}</span>
         </div>
       )}
 
       {/* Error */}
       {detail.error && (
-        <div className="mx-4 mt-2 rounded bg-red-900/30 border border-red-800 px-3 py-2 text-xs text-red-300 shrink-0 flex items-center gap-2">
+        <div className="message error detail-message" role="alert">
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="shrink-0">
             <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.5"/>
             <path d="M7 4V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
             <circle cx="7" cy="10.5" r="0.75" fill="currentColor"/>
           </svg>
-          <span className="flex-1">{detail.error}</span>
+          <strong>Error</strong>
+          <span>{detail.error}</span>
         </div>
       )}
 
       {/* Content */}
-      <div className="flex flex-1 min-h-0">
+      <div
+        className={`detail-content${activeTab === "changes" || activeTab === "history" ? " split-view" : ""}`}
+        role="tabpanel"
+        id={`panel-${activeTab}`}
+        aria-labelledby={`tab-${activeTab}`}
+      >
         {activeTab === "changes" && (
           <>
             {/* Left: file list + commit form */}
-            <div className="flex w-80 shrink-0 flex-col border-r border-slate-700">
-              <div className="flex-1 min-h-0 overflow-auto">
+            <div className="side-panel">
+              <div className="scroll-region">
                 <FileChanges
                   changes={detail.changes}
                   selectedFile={selectedFile}
@@ -396,7 +406,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
               <CommitForm stagedCount={stagedCount} onCommit={detail.createCommit} />
             </div>
             {/* Right: diff */}
-            <div className="flex-1 min-h-0 overflow-auto">
+            <div className="content-panel">
               <DiffViewer diff={detail.diff} />
             </div>
           </>
@@ -405,7 +415,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
         {activeTab === "history" && (
           <>
             {/* Left: branch graph + commit list */}
-            <div className="w-[560px] shrink-0 overflow-auto border-r border-slate-700">
+            <div className="side-panel graph-panel">
               <CommitGraph
                 commits={detail.commits}
                 selectedOid={selectedCommit}
@@ -414,14 +424,14 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
               />
             </div>
             {/* Right: commit details + diff */}
-            <div className="flex-1 min-h-0 overflow-auto flex flex-col">
+            <div className="content-panel">
               {/* Commit files panel */}
               {selectedCommit && detail.commitFiles.length > 0 && (
-                <div className="border-b border-slate-700 shrink-0">
-                  <div className="flex items-center justify-between px-3 py-1.5">
-                    <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                <div className="shrink-0 border-b border-[var(--border)]">
+                  <div className="section-header">
+                    <span className="section-title">
                       Changed Files
-                      <span className="ml-1.5 text-slate-500">{detail.commitFiles.length}</span>
+                      <span className="section-count">{detail.commitFiles.length}</span>
                     </span>
                     {squashCount >= 2 && (
                       <button
@@ -434,32 +444,33 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
                               .join("\n\n"),
                           );
                         }}
-                        className="text-xs text-amber-400 hover:text-amber-300 transition"
+                        className="section-action"
                       >
                         Squash {squashCount} commits
                       </button>
                     )}
                   </div>
                   {showSquash && (
-                    <div className="px-3 pb-2 flex flex-col gap-1.5">
+                    <div className="inline-form stack">
                       <textarea
                         value={squashMessage}
                         onChange={(e) => setSquashMessage(e.target.value)}
                         rows={3}
-                        className="w-full rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500 resize-none"
+                        aria-label="Squash commit message"
+                        className="control compact mono"
                         placeholder="Squash commit message..."
                       />
                       <div className="flex items-center gap-2">
                         <button
                           onClick={handleSquash}
                           disabled={!squashMessage.trim()}
-                          className="rounded bg-amber-600 px-2 py-1 text-xs text-white hover:bg-amber-500 disabled:opacity-40"
+                          className="button compact warning"
                         >
                           Squash
                         </button>
                         <button
                           onClick={() => setShowSquash(false)}
-                          className="text-xs text-slate-400 hover:text-slate-200"
+                          className="button compact ghost"
                         >
                           Cancel
                         </button>
@@ -473,7 +484,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
                   </div>
                 </div>
               )}
-              <div className="flex-1 min-h-0 overflow-auto">
+              <div className="scroll-region">
                 <DiffViewer diff={detail.diff} />
               </div>
             </div>
@@ -481,7 +492,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
         )}
 
         {activeTab === "branches" && (
-          <div className="flex-1 overflow-auto">
+          <div className="full-panel">
             <BranchPanel
               branches={detail.branches}
               onCheckout={detail.checkoutBranch}
@@ -497,7 +508,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
         )}
 
         {activeTab === "stashes" && (
-          <div className="flex-1 overflow-auto">
+          <div className="full-panel">
             <StashPanel
               stashes={detail.stashes}
               onSave={detail.saveStash}
@@ -508,7 +519,7 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
         )}
 
         {activeTab === "readme" && (
-          <div className="flex-1 overflow-auto">
+          <div className="full-panel">
             <ReadmeViewer content={detail.readme} />
           </div>
         )}
@@ -534,11 +545,11 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
 
 function CommitFileRow({ file }: { file: CommitFileChange }) {
   const statusColors: Record<string, string> = {
-    added: "text-green-400",
-    deleted: "text-red-400",
-    modified: "text-yellow-400",
-    renamed: "text-blue-400",
-    copied: "text-cyan-400",
+    added: "status-added",
+    deleted: "status-deleted",
+    modified: "status-modified",
+    renamed: "status-renamed",
+    copied: "status-copied",
   };
   const statusLetters: Record<string, string> = {
     added: "A",
@@ -549,11 +560,11 @@ function CommitFileRow({ file }: { file: CommitFileChange }) {
   };
 
   return (
-    <div className="flex items-center gap-2 px-3 py-0.5 text-xs hover:bg-slate-700/30">
-      <span className={`font-mono font-bold w-3 ${statusColors[file.status] || "text-slate-400"}`}>
+    <div className="data-row">
+      <span className={`status-letter ${statusColors[file.status] || "status-untracked"}`}>
         {statusLetters[file.status] || "?"}
       </span>
-      <span className="font-mono text-slate-300 truncate">{file.path}</span>
+      <span className="data-row-main mono">{file.path}</span>
     </div>
   );
 }
@@ -570,44 +581,47 @@ function FileHistoryPanel({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-y-0 right-0 z-60 w-96 bg-slate-800 border-l border-slate-700 shadow-2xl flex flex-col">
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-700">
+    <aside className="slide-over" aria-label={`History for ${filePath}`}>
+      <div className="slide-over-header">
         <div className="min-w-0">
-          <h3 className="text-sm font-semibold text-white">File History</h3>
-          <p className="text-xs font-mono text-slate-400 truncate">{filePath}</p>
+          <h2>File History</h2>
+          <p>{filePath}</p>
         </div>
         <button
           onClick={onClose}
-          className="rounded p-1 text-slate-400 hover:bg-slate-700 hover:text-slate-200"
+          className="icon-button"
+          aria-label="Close file history"
         >
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
             <path d="M4 4L12 12M12 4L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
       </div>
-      <div className="flex-1 overflow-auto">
+      <div className="scroll-region">
         {history.length === 0 ? (
-          <p className="p-4 text-xs text-slate-500">Loading...</p>
+          <p className="empty-row">Loading…</p>
         ) : (
           history.map((commit) => (
             <button
               key={commit.oid}
               onClick={() => onSelectCommit(commit.oid)}
-              className="w-full text-left px-4 py-2 border-b border-slate-700/50 hover:bg-slate-700/30 transition"
+              className="commit-row"
             >
-              <p className="text-sm text-slate-200 truncate">{commit.message.split("\n")[0]}</p>
-              <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                <span className="font-mono text-slate-400">{commit.short_oid}</span>
-                <span className="truncate">{commit.author}</span>
-                <span className="ml-auto shrink-0">
+              <div className="commit-copy">
+              <div className="commit-subject"><p>{commit.message.split("\n")[0]}</p></div>
+              <div className="commit-meta">
+                <span className="oid">{commit.short_oid}</span>
+                <span className="author">{commit.author}</span>
+                <time dateTime={commit.date}>
                   {new Date(commit.date).toLocaleDateString()}
-                </span>
+                </time>
+              </div>
               </div>
             </button>
           ))
         )}
       </div>
-    </div>
+    </aside>
   );
 }
 
@@ -630,11 +644,7 @@ function HeaderButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className={`rounded px-2.5 py-1 text-xs font-medium transition ${
-        isThisAction
-          ? "bg-blue-600/30 text-blue-300 border border-blue-500/40"
-          : "bg-slate-700/80 text-slate-300 hover:bg-slate-600 hover:text-white"
-      } disabled:opacity-40 disabled:cursor-not-allowed`}
+      className={`button compact${isThisAction ? " info" : " subtle"}`}
     >
       {isThisAction ? (
         <span className="flex items-center gap-1.5">
@@ -650,7 +660,7 @@ function HeaderButton({
 
 function Spinner() {
   return (
-    <svg className="animate-spin h-3 w-3" viewBox="0 0 12 12" fill="none">
+    <svg className="spinner" viewBox="0 0 12 12" fill="none">
       <circle cx="6" cy="6" r="5" stroke="currentColor" strokeWidth="2" strokeOpacity="0.3" />
       <path d="M6 1A5 5 0 0 1 11 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
     </svg>

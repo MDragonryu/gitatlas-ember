@@ -10,11 +10,11 @@ interface CommitGraphProps {
   onMergeDrop?: (sourceBranch: string, targetOid: string) => void;
 }
 
-const REF_COLORS: Record<string, { bg: string; text: string }> = {
-  head: { bg: "bg-green-600", text: "text-white" },
-  local: { bg: "bg-blue-600", text: "text-white" },
-  remote: { bg: "bg-slate-600", text: "text-slate-200" },
-  tag: { bg: "bg-amber-600", text: "text-white" },
+const REF_CLASSES: Record<string, string> = {
+  head: "ref-head",
+  local: "ref-local",
+  remote: "ref-remote",
+  tag: "ref-tag",
 };
 
 function avatarColor(email: string): string {
@@ -22,8 +22,8 @@ function avatarColor(email: string): string {
   for (let i = 0; i < email.length; i++) {
     hash = email.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const hue = Math.abs(hash) % 360;
-  return `hsl(${hue}, 55%, 45%)`;
+  const colors = ["var(--action)", "var(--type)", "var(--success)", "var(--number)", "var(--attribute)"];
+  return colors[Math.abs(hash) % colors.length];
 }
 
 export default function CommitGraph({ commits, selectedOid, onSelect, onMergeDrop }: CommitGraphProps) {
@@ -48,17 +48,17 @@ export default function CommitGraph({ commits, selectedOid, onSelect, onMergeDro
 
   if (commits.length === 0) {
     return (
-      <div className="p-4 text-sm text-slate-500">No commits found</div>
+      <div className="empty-row">No commits found</div>
     );
   }
 
   return (
-    <div className="relative overflow-auto h-full">
+    <div className="commit-graph">
       {/* SVG layer */}
       <GraphSvg commits={commits} width={graphWidth} />
 
       {/* Commit rows on top of SVG */}
-      <div className="relative" style={{ paddingLeft: graphWidth }}>
+      <div className="commit-rows" style={{ paddingLeft: graphWidth }}>
         {commits.map((commit) => {
           const isSelected = selectedOid === commit.oid;
           const date = new Date(commit.date);
@@ -72,39 +72,35 @@ export default function CommitGraph({ commits, selectedOid, onSelect, onMergeDro
               onClick={() => onSelect(commit.oid)}
               onDragOver={handleDragOver}
               onDrop={(e) => handleDrop(e, commit.oid)}
-              className={`flex items-center w-full text-left transition ${
-                isSelected
-                  ? "bg-indigo-600/20"
-                  : "hover:bg-slate-700/20"
-              }`}
+              className={`commit-row${isSelected ? " selected" : ""}`}
               style={{ height: ROW_HEIGHT }}
             >
               {/* Avatar */}
               <div
-                className="shrink-0 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white ml-2"
+                className="avatar"
                 style={{ backgroundColor: color }}
                 title={commit.author}
               >
                 {initial}
               </div>
 
-              <div className="flex flex-col gap-0.5 px-3 py-1 min-w-0 flex-1">
-                <div className="flex items-center gap-2 min-w-0">
-                  <p className="text-sm text-slate-200 leading-snug truncate">
+              <div className="commit-copy">
+                <div className="commit-subject">
+                  <p>
                     {commit.message.split("\n")[0]}
                   </p>
                   {commit.refs.length > 0 && (
-                    <div className="flex items-center gap-1 shrink-0">
+                    <div className="ref-list">
                       {commit.refs.map((ref) => (
                         <RefBadge key={`${ref.kind}-${ref.name}`} refLabel={ref} />
                       ))}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-500">
-                  <span className="font-mono text-slate-400">{commit.short_oid}</span>
-                  <span className="truncate">{commit.author}</span>
-                  <span className="ml-auto shrink-0">{relDate}</span>
+                <div className="commit-meta">
+                  <span className="oid">{commit.short_oid}</span>
+                  <span className="author">{commit.author}</span>
+                  <time dateTime={commit.date}>{relDate}</time>
                 </div>
               </div>
             </button>
@@ -116,7 +112,7 @@ export default function CommitGraph({ commits, selectedOid, onSelect, onMergeDro
 }
 
 function RefBadge({ refLabel }: { refLabel: RefLabel }) {
-  const colors = REF_COLORS[refLabel.kind] ?? REF_COLORS.local;
+  const className = REF_CLASSES[refLabel.kind] ?? REF_CLASSES.local;
   const display = refLabel.kind === "head"
     ? `HEAD \u2192 ${refLabel.name}`
     : refLabel.name;
@@ -132,7 +128,7 @@ function RefBadge({ refLabel }: { refLabel: RefLabel }) {
     <span
       draggable={isDraggable}
       onDragStart={isDraggable ? handleDragStart : undefined}
-      className={`inline-flex items-center rounded px-1.5 py-0 text-[10px] font-semibold leading-4 ${colors.bg} ${colors.text} ${isDraggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={`ref-badge ${className}${isDraggable ? " cursor-grab active:cursor-grabbing" : ""}`}
     >
       {display}
     </span>

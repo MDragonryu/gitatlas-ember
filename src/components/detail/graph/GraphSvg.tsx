@@ -122,7 +122,7 @@ export default function GraphSvg({ commits, width }: GraphSvgProps) {
               cy={y}
               r={isMerge ? NODE_RADIUS + 1 : NODE_RADIUS}
               fill={color}
-              stroke={isMerge ? "#1e293b" : "none"}
+              stroke={isMerge ? "var(--canvas)" : "none"}
               strokeWidth={isMerge ? 2 : 0}
             />
           </g>

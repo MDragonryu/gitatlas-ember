@@ -44,41 +44,42 @@ export default function BranchPanel({
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-slate-700">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="section-header">
+        <span className="section-title">
           Local
-          <span className="ml-1.5 text-slate-500">{localBranches.length}</span>
+          <span className="section-count">{localBranches.length}</span>
         </span>
         <button
           onClick={() => setShowCreate(!showCreate)}
-          className="text-xs text-slate-400 hover:text-slate-200 transition"
+          className="section-action"
         >
           + New
         </button>
       </div>
 
       {showCreate && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700/50">
+        <div className="inline-form">
           <input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             placeholder="branch-name"
+            aria-label="New branch name"
             autoFocus
-            className="flex-1 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+            className="control compact mono"
           />
           <button
             onClick={handleCreate}
             disabled={!newName.trim() || creating}
-            className="rounded bg-indigo-600 px-2 py-1 text-xs text-white disabled:opacity-40"
+            className="button compact primary"
           >
             Create
           </button>
         </div>
       )}
 
-      <div className="overflow-auto flex-1">
+      <div className="scroll-region">
         {localBranches.map((branch) => (
           <BranchRow
             key={branch.name}
@@ -92,13 +93,13 @@ export default function BranchPanel({
 
       {remoteBranches.length > 0 && (
         <>
-          <div className="px-3 py-2 border-t border-b border-slate-700">
-            <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+          <div className="section-header">
+            <span className="section-title">
               Remote Branches
-              <span className="ml-1.5 text-slate-500">{remoteBranches.length}</span>
+              <span className="section-count">{remoteBranches.length}</span>
             </span>
           </div>
-          <div className="overflow-auto flex-1">
+          <div className="scroll-region">
             {remoteBranches.map((branch) => (
               <BranchRow
                 key={branch.name}
@@ -135,38 +136,38 @@ function BranchRow({
   onMerge?: (name: string) => Promise<void>;
 }) {
   return (
-    <div className="group flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-slate-700/30 transition">
-      <span className={`flex-1 font-mono truncate ${branch.is_head ? "text-green-400 font-semibold" : "text-slate-300"}`}>
+    <div className="data-row">
+      <span className={`data-row-main mono${branch.is_head ? " branch-head" : ""}`}>
         {branch.is_head && "* "}
         {branch.name}
       </span>
 
       {branch.upstream && (
-        <span className="text-slate-600 truncate max-w-24" title={branch.upstream}>
+        <span className="row-meta" title={branch.upstream}>
           {branch.upstream}
         </span>
       )}
 
       {!branch.is_head && (
-        <div className="hidden group-hover:flex items-center gap-1">
+        <div className="row-actions">
           {onMerge && !branch.is_remote && (
             <button
               onClick={() => onMerge(branch.name)}
-              className="rounded bg-purple-900/50 px-1.5 py-0.5 text-purple-300 hover:bg-purple-900"
+              className="row-action"
             >
               merge
             </button>
           )}
           <button
             onClick={() => onCheckout(branch.name)}
-            className="rounded bg-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-600"
+            className="row-action"
           >
             checkout
           </button>
           {onDelete && !branch.is_remote && (
             <button
               onClick={() => onDelete(branch.name)}
-              className="rounded bg-red-900/50 px-1.5 py-0.5 text-red-400 hover:bg-red-900"
+              className="row-action danger"
             >
               delete
             </button>
@@ -211,15 +212,15 @@ function RemotesSection({
 
   return (
     <>
-      <div className="flex items-center justify-between px-3 py-2 border-t border-b border-slate-700">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+      <div className="section-header">
+        <span className="section-title">
           Remotes
-          <span className="ml-1.5 text-slate-500">{remotes.length}</span>
+          <span className="section-count">{remotes.length}</span>
         </span>
         {onAdd && (
           <button
             onClick={() => setShowAdd(!showAdd)}
-            className="text-xs text-slate-400 hover:text-slate-200 transition"
+            className="section-action"
           >
             + Add
           </button>
@@ -227,36 +228,38 @@ function RemotesSection({
       </div>
 
       {showAdd && (
-        <div className="flex flex-col gap-1.5 px-3 py-2 border-b border-slate-700/50">
+        <div className="inline-form stack">
           <input
             value={addName}
             onChange={(e) => setAddName(e.target.value)}
             placeholder="name (e.g. upstream)"
-            className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+            aria-label="Remote name"
+            className="control compact mono"
           />
           <input
             value={addUrl}
             onChange={(e) => setAddUrl(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && handleAdd()}
             placeholder="https://github.com/user/repo.git"
-            className="rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+            aria-label="Remote URL"
+            className="control compact mono"
           />
           <button
             onClick={handleAdd}
             disabled={!addName.trim() || !addUrl.trim()}
-            className="self-end rounded bg-indigo-600 px-2 py-1 text-xs text-white disabled:opacity-40"
+            className="button compact primary self-end"
           >
             Add Remote
           </button>
         </div>
       )}
 
-      <div className="overflow-auto flex-1">
+      <div className="scroll-region">
         {remotes.length === 0 ? (
-          <p className="px-3 py-2 text-xs text-slate-600">No remotes configured</p>
+          <p className="empty-row">No remotes configured</p>
         ) : (
           remotes.map((remote) => (
-            <div key={remote.name} className="group flex items-center gap-2 px-3 py-1.5 text-xs hover:bg-slate-700/30 transition">
+            <div key={remote.name} className="data-row">
               {renamingRemote === remote.name ? (
                 <input
                   value={renameValue}
@@ -267,24 +270,25 @@ function RemotesSection({
                   }}
                   onBlur={() => setRenamingRemote(null)}
                   autoFocus
-                  className="flex-1 rounded border border-slate-700 bg-slate-800 px-1 py-0.5 text-xs font-mono text-slate-200 outline-none focus:border-slate-500"
+                  aria-label={`Rename ${remote.name}`}
+                  className="control compact mono"
                 />
               ) : (
                 <>
-                  <span className="font-mono font-semibold text-slate-300">{remote.name}</span>
-                  <span className="flex-1 font-mono text-slate-500 truncate" title={remote.url}>
+                  <span className="mono">{remote.name}</span>
+                  <span className="data-row-main mono" title={remote.url}>
                     {remote.url}
                   </span>
                 </>
               )}
-              <div className="hidden group-hover:flex items-center gap-1">
+              <div className="row-actions">
                 {onRename && (
                   <button
                     onClick={() => {
                       setRenamingRemote(remote.name);
                       setRenameValue(remote.name);
                     }}
-                    className="rounded bg-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-600"
+                    className="row-action"
                   >
                     rename
                   </button>
@@ -292,7 +296,7 @@ function RemotesSection({
                 {onRemove && (
                   <button
                     onClick={() => onRemove(remote.name)}
-                    className="rounded bg-red-900/50 px-1.5 py-0.5 text-red-400 hover:bg-red-900"
+                    className="row-action danger"
                   >
                     remove
                   </button>

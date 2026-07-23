@@ -23,45 +23,46 @@ export default function StashPanel({ stashes, onSave, onPop, onDrop }: StashPane
   };
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700">
+    <div className="flex h-full flex-col overflow-hidden">
+      <div className="inline-form">
         <input
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && handleSave()}
           placeholder="Stash message (optional)"
-          className="flex-1 rounded border border-slate-700 bg-slate-800 px-2 py-1 text-xs text-slate-200 placeholder-slate-500 outline-none focus:border-slate-500"
+          aria-label="Stash message"
+          className="control compact"
         />
         <button
           onClick={handleSave}
           disabled={saving}
-          className="rounded bg-purple-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-purple-500 disabled:opacity-40"
+          className="button compact"
         >
           {saving ? "..." : "Stash"}
         </button>
       </div>
 
-      <div className="overflow-auto flex-1">
+      <div className="scroll-region">
         {stashes.length === 0 ? (
-          <p className="px-3 py-4 text-xs text-slate-500 text-center">No stashes</p>
+          <p className="empty-row">No stashes</p>
         ) : (
           stashes.map((stash) => (
             <div
               key={stash.index}
-              className="group flex items-center gap-2 px-3 py-2 text-xs border-b border-slate-700/30 hover:bg-slate-700/30 transition"
+              className="data-row"
             >
-              <span className="font-mono text-slate-500">#{stash.index}</span>
-              <span className="flex-1 truncate text-slate-300">{stash.message}</span>
-              <div className="hidden group-hover:flex items-center gap-1">
+              <span className="row-meta mono">#{stash.index}</span>
+              <span className="data-row-main">{stash.message}</span>
+              <div className="row-actions">
                 <button
                   onClick={() => onPop(stash.index)}
-                  className="rounded bg-slate-700 px-1.5 py-0.5 text-slate-300 hover:bg-slate-600"
+                  className="row-action"
                 >
                   pop
                 </button>
                 <button
                   onClick={() => onDrop(stash.index)}
-                  className="rounded bg-red-900/50 px-1.5 py-0.5 text-red-400 hover:bg-red-900"
+                  className="row-action danger"
                 >
                   drop
                 </button>

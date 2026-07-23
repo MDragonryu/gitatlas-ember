@@ -6,6 +6,7 @@ import FilterBar from "./FilterBar";
 import RepoList from "./RepoList";
 import BulkActions from "./BulkActions";
 import GitHubLink from "./GitHubLink";
+import ThemeSwitcher from "./ThemeSwitcher";
 import RepoDetail from "./detail/RepoDetail";
 
 export default function Dashboard() {
@@ -104,18 +105,29 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="px-6 py-8">
-      <header className="mb-8 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div>
-            <h1 className="text-2xl font-bold text-white">GitAtlas</h1>
-            <p className="text-sm text-slate-400">
-              Multi-repo observability dashboard
-            </p>
+    <main className="app-shell">
+      <div className="dashboard">
+      <header className="dashboard-header">
+        <div className="brand-lockup">
+          <div className="brand-mark" aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+              <circle cx="6" cy="5" r="2" fill="currentColor" />
+              <circle cx="18" cy="8" r="2" fill="currentColor" />
+              <circle cx="8" cy="19" r="2" fill="currentColor" />
+              <path d="M6 7v4.5a3 3 0 0 0 3 3h3a4 4 0 0 0 4-4V10M8 17v-2.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+            </svg>
           </div>
-          <GitHubLink url="https://github.com/grahambrooks/gitatlas" className="h-5 w-5" />
+          <div className="brand-copy">
+            <span className="eyebrow">Repository workspace</span>
+            <div className="brand-row">
+              <h1>GitAtlas</h1>
+              <GitHubLink url="https://github.com/grahambrooks/gitatlas" className="h-4 w-4" />
+            </div>
+            <p className="subtitle">Multi-repo observability, without the noise.</p>
+          </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="header-actions">
+          <ThemeSwitcher />
           <BulkActions
             onFetchAll={fetchAll}
             onPullAll={pullAll}
@@ -125,18 +137,18 @@ export default function Dashboard() {
           <button
             onClick={handleScan}
             disabled={loading || scanRoots.length === 0}
-            className="rounded-md bg-indigo-600 px-4 py-1.5 text-sm font-medium text-white transition hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="button primary"
           >
             {loading ? "Scanning..." : "Scan for Repos"}
           </button>
         </div>
       </header>
 
-      <div className="mb-6 flex items-center gap-2 text-sm">
-        <span className="text-slate-500 shrink-0">Scan root:</span>
+      <section className="scan-bar" aria-label="Repository scan location">
+        <span className="scan-label">Scan root</span>
         {editingRoot !== null ? (
           <form
-            className="flex items-center gap-2 flex-1 min-w-0"
+            className="min-w-0"
             onSubmit={(e) => {
               e.preventDefault();
               saveScanRoot(editingRoot);
@@ -151,23 +163,26 @@ export default function Dashboard() {
               onKeyDown={(e) => {
                 if (e.key === "Escape") setEditingRoot(null);
               }}
-              className="flex-1 min-w-0 rounded bg-slate-800 border border-slate-600 px-2 py-0.5 text-sm font-mono text-slate-200 focus:border-indigo-500 focus:outline-none"
+              aria-label="Scan root path"
+              className="control compact mono"
             />
           </form>
         ) : (
           <button
             onClick={() => setEditingRoot(scanRoots[0] ?? "")}
-            className="truncate font-mono text-slate-300 hover:text-white transition cursor-pointer"
+            className="scan-path"
             title="Click to change scan root"
           >
             {scanRoots[0] ?? "Not set"}
           </button>
         )}
-      </div>
+        <span className="count-label">{repos.length} indexed</span>
+      </section>
 
       {(error || settingsError) && (
-        <div className="mb-4 rounded-md bg-red-900/30 border border-red-800 px-4 py-3 text-sm text-red-300">
-          {error || settingsError}
+        <div className="message error" role="alert">
+          <strong>Error</strong>
+          <span>{error || settingsError}</span>
         </div>
       )}
 
@@ -181,7 +196,7 @@ export default function Dashboard() {
         />
       )}
 
-      <div className="mb-4 text-sm text-slate-500">
+      <div className="result-count" role="status">
         {repos.length === 0
           ? "No repositories scanned yet"
           : filteredRepos.length === repos.length
@@ -196,6 +211,7 @@ export default function Dashboard() {
         onPush={pushRepo}
         onOpen={setSelectedRepo}
       />
-    </div>
+      </div>
+    </main>
   );
 }

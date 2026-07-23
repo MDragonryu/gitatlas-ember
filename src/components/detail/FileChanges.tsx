@@ -11,13 +11,13 @@ interface FileChangesProps {
   onFileHistory?: (path: string) => void;
 }
 
-const STATUS_LABELS: Record<FileStatus, { letter: string; color: string }> = {
-  added: { letter: "A", color: "text-green-400" },
-  modified: { letter: "M", color: "text-yellow-400" },
-  deleted: { letter: "D", color: "text-red-400" },
-  renamed: { letter: "R", color: "text-blue-400" },
-  untracked: { letter: "?", color: "text-slate-400" },
-  conflicted: { letter: "!", color: "text-red-500" },
+const STATUS_LABELS: Record<FileStatus, { letter: string; tone: string }> = {
+  added: { letter: "A", tone: "status-added" },
+  modified: { letter: "M", tone: "status-modified" },
+  deleted: { letter: "D", tone: "status-deleted" },
+  renamed: { letter: "R", tone: "status-renamed" },
+  untracked: { letter: "?", tone: "status-untracked" },
+  conflicted: { letter: "!", tone: "status-conflicted" },
 };
 
 export default function FileChanges({
@@ -34,7 +34,7 @@ export default function FileChanges({
   const unstaged = changes.filter((c) => !c.staged);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex h-full flex-col overflow-hidden">
       {/* Staged */}
       <Section
         title="Staged"
@@ -90,29 +90,29 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col min-h-0 flex-1">
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-slate-700">
-        <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+    <section className="panel-section">
+      <div className="section-header">
+        <span className="section-title">
           {title}
-          <span className="ml-1.5 text-slate-500">{count}</span>
+          <span className="section-count">{count}</span>
         </span>
         {action && (
           <button
             onClick={action.onClick}
-            className="text-xs text-slate-400 hover:text-slate-200 transition"
+            className="section-action"
           >
             {action.label}
           </button>
         )}
       </div>
-      <div className="overflow-auto flex-1">
+      <div className="scroll-region">
         {count === 0 ? (
-          <p className="px-3 py-2 text-xs text-slate-600">No files</p>
+          <p className="empty-row">No files</p>
         ) : (
           children
         )}
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -133,18 +133,14 @@ function FileRow({
   actionTitle: string;
   onFileHistory?: (path: string) => void;
 }) {
-  const { letter, color } = STATUS_LABELS[file.status];
+  const { letter, tone } = STATUS_LABELS[file.status];
 
   return (
-    <div
-      className={`group flex items-center gap-2 px-3 py-1 cursor-pointer transition text-xs ${
-        isSelected ? "bg-indigo-600/20" : "hover:bg-slate-700/30"
-      }`}
-    >
-      <span className={`font-mono font-bold w-3 ${color}`}>{letter}</span>
+    <div className={`data-row${isSelected ? " selected" : ""}`}>
+      <span className={`status-letter ${tone}`}>{letter}</span>
       <button
         onClick={onSelect}
-        className="flex-1 truncate text-left text-slate-300 font-mono"
+        className="data-row-main mono"
         title={file.path}
       >
         {file.path}
@@ -156,7 +152,7 @@ function FileRow({
             onFileHistory(file.path);
           }}
           title="File history"
-          className="hidden group-hover:block rounded bg-slate-700 px-1.5 py-0.5 text-xs text-slate-300 hover:bg-slate-600"
+          className="row-action"
         >
           history
         </button>
@@ -167,7 +163,7 @@ function FileRow({
           onAction();
         }}
         title={actionTitle}
-        className="hidden group-hover:block rounded bg-slate-700 px-1.5 py-0.5 text-xs font-bold text-slate-300 hover:bg-slate-600"
+        className="row-action"
       >
         {actionLabel}
       </button>

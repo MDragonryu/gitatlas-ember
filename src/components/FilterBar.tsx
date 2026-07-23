@@ -1,10 +1,10 @@
 import type { RepoHealth, RepoInfo } from "../types";
 
-const HEALTH_OPTIONS: { value: RepoHealth; label: string; dot: string }[] = [
-  { value: "clean", label: "Clean", dot: "bg-green-500" },
-  { value: "dirty", label: "Changes", dot: "bg-yellow-500" },
-  { value: "diverged", label: "Diverged", dot: "bg-red-500" },
-  { value: "error", label: "Error", dot: "bg-gray-500" },
+const HEALTH_OPTIONS: { value: RepoHealth; label: string; tone: string }[] = [
+  { value: "clean", label: "Clean", tone: "tone-clean" },
+  { value: "dirty", label: "Changes", tone: "tone-dirty" },
+  { value: "diverged", label: "Diverged", tone: "tone-diverged" },
+  { value: "error", label: "Error", tone: "tone-error" },
 ];
 
 interface FilterBarProps {
@@ -28,26 +28,21 @@ export default function FilterBar({
   }
 
   return (
-    <div className="mb-4 flex flex-wrap items-center gap-3">
-      <div className="flex items-center gap-1.5">
-        {HEALTH_OPTIONS.map(({ value, label, dot }) => {
+    <div className="filter-bar">
+      <div className="filter-group" aria-label="Repository health filters">
+        {HEALTH_OPTIONS.map(({ value, label, tone }) => {
           const count = counts.get(value) ?? 0;
           const active = activeFilters.has(value);
           return (
             <button
               key={value}
               onClick={() => onToggleFilter(value)}
-              className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                active
-                  ? "border-slate-500 bg-slate-700 text-slate-200"
-                  : "border-slate-700 bg-transparent text-slate-500 hover:border-slate-600 hover:text-slate-400"
-              }`}
+              aria-pressed={active}
+              className={`filter-chip ${tone}${active ? " active" : ""}`}
             >
-              <span className={`inline-block h-2 w-2 rounded-full ${dot}`} />
+              <span className="filter-dot" aria-hidden="true" />
               {label}
-              <span className={active ? "text-slate-400" : "text-slate-600"}>
-                {count}
-              </span>
+              <span className="chip-count">{count}</span>
             </button>
           );
         })}
@@ -58,7 +53,8 @@ export default function FilterBar({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Search repos..."
-        className="ml-auto rounded-md border border-slate-700 bg-slate-800 px-3 py-1 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-500 w-56"
+        aria-label="Search repositories"
+        className="control filter-search"
       />
     </div>
   );

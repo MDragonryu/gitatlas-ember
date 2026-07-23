@@ -17,16 +17,14 @@ export interface GraphEdge {
 }
 
 const LANE_COLORS = [
-  "#60a5fa", // blue
-  "#34d399", // green
-  "#f472b6", // pink
-  "#a78bfa", // purple
-  "#fbbf24", // amber
-  "#fb923c", // orange
-  "#2dd4bf", // teal
-  "#e879f9", // fuchsia
-  "#f87171", // red
-  "#38bdf8", // sky
+  "var(--keyword)",
+  "var(--type)",
+  "var(--success)",
+  "var(--number)",
+  "var(--function)",
+  "var(--attribute)",
+  "var(--info)",
+  "var(--operator, var(--keyword))",
 ];
 
 export function colorForLane(lane: number): string {

@@ -27,23 +27,24 @@ export default function CommitForm({ stagedCount, onCommit }: CommitFormProps) {
   };
 
   return (
-    <div className="border-t border-slate-700 p-3">
+    <div className="commit-form">
       <textarea
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Commit message..."
+        aria-label="Commit message"
         rows={3}
-        className="w-full resize-none rounded border border-slate-700 bg-slate-800 px-2.5 py-1.5 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-slate-500"
+        className="control"
       />
-      <div className="mt-2 flex items-center justify-between">
-        <span className="text-xs text-slate-500">
+      <div className="form-footer">
+        <span>
           {stagedCount} file{stagedCount !== 1 ? "s" : ""} staged
         </span>
         <button
           onClick={handleSubmit}
           disabled={!message.trim() || stagedCount === 0 || committing}
-          className="rounded bg-green-600 px-3 py-1 text-xs font-medium text-white transition hover:bg-green-500 disabled:opacity-40 disabled:cursor-not-allowed"
+          className="button compact success"
         >
           {committing ? "Committing..." : "Commit"}
         </button>

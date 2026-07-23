@@ -9,12 +9,12 @@ interface CommitLogProps {
 export default function CommitLog({ commits, selectedOid, onSelect }: CommitLogProps) {
   if (commits.length === 0) {
     return (
-      <div className="p-4 text-sm text-slate-500">No commits found</div>
+      <div className="empty-row">No commits found</div>
     );
   }
 
   return (
-    <div className="flex flex-col divide-y divide-slate-700/50">
+    <div>
       {commits.map((commit) => {
         const isSelected = selectedOid === commit.oid;
         const date = new Date(commit.date);
@@ -24,19 +24,17 @@ export default function CommitLog({ commits, selectedOid, onSelect }: CommitLogP
           <button
             key={commit.oid}
             onClick={() => onSelect(commit.oid)}
-            className={`flex flex-col gap-0.5 px-3 py-2 text-left transition ${
-              isSelected
-                ? "bg-indigo-600/20 border-l-2 border-indigo-400"
-                : "hover:bg-slate-700/30 border-l-2 border-transparent"
-            }`}
+            className={`commit-row${isSelected ? " selected" : ""}`}
           >
-            <p className="text-sm text-slate-200 leading-snug line-clamp-2">
+            <div className="commit-copy">
+            <p className="m-0 text-sm">
               {commit.message.split("\n")[0]}
             </p>
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <span className="font-mono text-slate-400">{commit.short_oid}</span>
+            <div className="commit-meta">
+              <span className="oid">{commit.short_oid}</span>
               <span>{commit.author}</span>
-              <span className="ml-auto">{relDate}</span>
+              <time dateTime={commit.date}>{relDate}</time>
+            </div>
             </div>
           </button>
         );

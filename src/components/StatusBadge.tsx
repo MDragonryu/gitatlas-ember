@@ -1,10 +1,10 @@
 import type { RepoHealth } from "../types";
 
-const healthConfig: Record<RepoHealth, { color: string; label: string }> = {
-  clean: { color: "bg-green-500", label: "Clean" },
-  dirty: { color: "bg-yellow-500", label: "Changes" },
-  diverged: { color: "bg-red-500", label: "Diverged" },
-  error: { color: "bg-gray-600", label: "Error" },
+const healthConfig: Record<RepoHealth, { tone: string; label: string }> = {
+  clean: { tone: "tone-clean", label: "Clean" },
+  dirty: { tone: "tone-dirty", label: "Changes" },
+  diverged: { tone: "tone-diverged", label: "Diverged" },
+  error: { tone: "tone-error", label: "Error" },
 };
 
 interface StatusBadgeProps {
@@ -14,9 +14,9 @@ interface StatusBadgeProps {
 export default function StatusBadge({ health }: StatusBadgeProps) {
   const config = healthConfig[health];
   return (
-    <span className="inline-flex items-center gap-1.5">
-      <span className={`inline-block h-2.5 w-2.5 rounded-full ${config.color}`} />
-      <span className="text-xs text-slate-400">{config.label}</span>
+    <span className={`status-badge ${config.tone}`}>
+      <span className="status-dot" aria-hidden="true" />
+      <span>{config.label}</span>
     </span>
   );
 }
