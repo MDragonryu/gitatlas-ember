@@ -4,6 +4,7 @@ use std::path::PathBuf;
 use serde::{Deserialize, Serialize};
 
 use crate::db::models::RepoInfo;
+use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize, Default)]
 pub struct Config {
@@ -11,51 +12,53 @@ pub struct Config {
     pub scan_roots: Vec<String>,
 }
 
-fn data_dir() -> Option<PathBuf> {
-    dirs_next::home_dir().map(|h| h.join(".gitatlas"))
+fn data_dir() -> Result<PathBuf, AppError> {
+    dirs_next::home_dir()
+        .map(|h| h.join(".gitatlas"))
+        .ok_or_else(|| AppError::General("Could not determine the user home directory".to_string()))
 }
 
-fn ensure_dir() -> Option<PathBuf> {
+fn ensure_dir() -> Result<PathBuf, AppError> {
     let dir = data_dir()?;
-    let _ = fs::create_dir_all(&dir);
-    Some(dir)
+    fs::create_dir_all(&dir)?;
+    Ok(dir)
 }
 
 // ── Repo cache ──
 
-pub fn save(repos: &[RepoInfo]) {
-    let Some(dir) = ensure_dir() else { return };
+pub fn save(repos: &[RepoInfo]) -> Result<(), AppError> {
+    let dir = ensure_dir()?;
     let path = dir.join("cache.json");
-    if let Ok(json) = serde_json::to_string(repos) {
-        let _ = fs::write(&path, json);
-    }
+    let json = serde_json::to_string(repos)?;
+    fs::write(path, json)?;
+    Ok(())
 }
 
-pub fn load() -> Vec<RepoInfo> {
-    let Some(dir) = data_dir() else {
-        return Vec::new();
+pub fn load() -> Result<Vec<RepoInfo>, AppError> {
+    let path = data_dir()?.join("cache.json");
+    let data = match fs::read_to_string(path) {
+        Ok(data) => data,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Vec::new()),
+        Err(error) => return Err(error.into()),
     };
-    let Ok(data) = fs::read_to_string(dir.join("cache.json")) else {
-        return Vec::new();
-    };
-    serde_json::from_str(&data).unwrap_or_default()
+    Ok(serde_json::from_str(&data)?)
 }
 
 // ── Config ──
 
-pub fn load_config() -> Config {
-    let Some(dir) = data_dir() else {
-        return Config::default();
+pub fn load_config() -> Result<Config, AppError> {
+    let path = data_dir()?.join("config.json");
+    let data = match fs::read_to_string(path) {
+        Ok(data) => data,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(Config::default()),
+        Err(error) => return Err(error.into()),
     };
-    let Ok(data) = fs::read_to_string(dir.join("config.json")) else {
-        return Config::default();
-    };
-    serde_json::from_str(&data).unwrap_or_default()
+    Ok(serde_json::from_str(&data)?)
 }
 
-pub fn save_config(config: &Config) {
-    let Some(dir) = ensure_dir() else { return };
-    if let Ok(json) = serde_json::to_string_pretty(config) {
-        let _ = fs::write(dir.join("config.json"), json);
-    }
+pub fn save_config(config: &Config) -> Result<(), AppError> {
+    let dir = ensure_dir()?;
+    let json = serde_json::to_string_pretty(config)?;
+    fs::write(dir.join("config.json"), json)?;
+    Ok(())
 }

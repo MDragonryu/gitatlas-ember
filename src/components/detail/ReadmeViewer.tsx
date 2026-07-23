@@ -1,3 +1,5 @@
+import type { MouseEvent } from "react";
+
 interface ReadmeViewerProps {
   content: string | null;
 }
@@ -23,7 +25,22 @@ export default function ReadmeViewer({ content }: ReadmeViewerProps) {
 /** Simple markdown-to-HTML renderer — handles common patterns without a dependency. */
 function MarkdownRenderer({ content }: { content: string }) {
   const html = renderMarkdown(content);
-  return <div dangerouslySetInnerHTML={{ __html: html }} />;
+  const handleClick = async (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target as HTMLElement;
+    const link = target.closest<HTMLAnchorElement>("a[data-external-url]");
+    if (!link) return;
+    event.preventDefault();
+    const url = link.dataset.externalUrl;
+    if (!url) return;
+    try {
+      const { open } = await import("@tauri-apps/plugin-shell");
+      await open(url);
+    } catch (error) {
+      console.error("Failed to open README link", error);
+    }
+  };
+
+  return <div onClick={handleClick} dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 function renderMarkdown(md: string): string {
@@ -73,16 +90,26 @@ function renderMarkdown(md: string): string {
   html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
   html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
 
-  // Links: [text](url)
-  html = html.replace(
-    /\[([^\]]+)\]\(([^)]+)\)/g,
-    '<a href="$2" class="text-blue-400 hover:text-blue-300 underline" target="_blank" rel="noopener noreferrer">$1</a>',
-  );
-
   // Images: ![alt](url)
   html = html.replace(
     /!\[([^\]]*)\]\(([^)]+)\)/g,
-    '<img src="$2" alt="$1" class="rounded max-w-full" />',
+    (_match, alt: string, url: string) => {
+      const safeUrl = sanitizeExternalUrl(url);
+      return safeUrl
+        ? `<img src="${safeUrl}" alt="${alt}" class="rounded max-w-full" />`
+        : `<span>${alt}</span>`;
+    },
+  );
+
+  // Links: [text](url)
+  html = html.replace(
+    /\[([^\]]+)\]\(([^)]+)\)/g,
+    (_match, text: string, url: string) => {
+      const safeUrl = sanitizeExternalUrl(url);
+      return safeUrl
+        ? `<a href="#" data-external-url="${safeUrl}" class="text-blue-400 hover:text-blue-300 underline">${text}</a>`
+        : `<span>${text}</span>`;
+    },
   );
 
   // Horizontal rule
@@ -115,5 +142,17 @@ function escapeHtml(text: string): string {
   return text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function sanitizeExternalUrl(url: string): string | null {
+  try {
+    const parsed = new URL(url.replace(/&amp;/g, "&"));
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return null;
+    return escapeHtml(parsed.toString());
+  } catch {
+    return null;
+  }
 }

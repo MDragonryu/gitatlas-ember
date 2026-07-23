@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import type { RepoInfo } from "../types";
+import type { BulkOperationResult, RepoInfo } from "../types";
 
 export function useRepos() {
   const [repos, setRepos] = useState<RepoInfo[]>([]);
@@ -48,12 +48,23 @@ export function useRepos() {
     }
   }, []);
 
+  const refreshRepo = useCallback(
+    async (path: string) => {
+      const updated = await invoke<RepoInfo>("get_repo_status", { path });
+      updateRepo(updated);
+    },
+    [updateRepo],
+  );
+
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<RepoInfo[]>("fetch_all");
-      setRepos(result);
+      const result = await invoke<BulkOperationResult>("fetch_all");
+      setRepos(result.repos);
+      if (result.errors.length > 0) {
+        setError(`Fetch failed for ${result.errors.join("; ")}`);
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -65,8 +76,11 @@ export function useRepos() {
     setLoading(true);
     setError(null);
     try {
-      const result = await invoke<RepoInfo[]>("pull_all");
-      setRepos(result);
+      const result = await invoke<BulkOperationResult>("pull_all");
+      setRepos(result.repos);
+      if (result.errors.length > 0) {
+        setError(`Pull failed for ${result.errors.join("; ")}`);
+      }
     } catch (err) {
       setError(String(err));
     } finally {
@@ -104,6 +118,7 @@ export function useRepos() {
     error,
     scanRepos,
     refreshRepos,
+    refreshRepo,
     fetchAll,
     pullAll,
     fetchRepo,

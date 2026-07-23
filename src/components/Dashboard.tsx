@@ -12,16 +12,19 @@ export default function Dashboard() {
   const {
     repos, loading, error,
     scanRepos, fetchAll, pullAll,
-    fetchRepo, pullRebaseRepo, pushRepo,
+    fetchRepo, pullRebaseRepo, pushRepo, refreshRepo,
   } = useRepos();
   const [scanRoots, setScanRoots] = useState<string[]>([]);
   const [editingRoot, setEditingRoot] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<Set<RepoHealth>>(new Set());
   const [search, setSearch] = useState("");
   const [selectedRepo, setSelectedRepo] = useState<RepoInfo | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
 
   useEffect(() => {
-    invoke<string[]>("get_scan_roots").then(setScanRoots).catch(() => {});
+    invoke<string[]>("get_scan_roots")
+      .then(setScanRoots)
+      .catch((err) => setSettingsError(String(err)));
   }, []);
 
   const handleScan = () => {
@@ -35,12 +38,28 @@ export default function Dashboard() {
       const trimmed = value.trim();
       if (!trimmed) return;
       const roots = [trimmed];
-      setScanRoots(roots);
-      setEditingRoot(null);
-      await invoke("set_scan_roots", { roots }).catch(() => {});
+      setSettingsError(null);
+      try {
+        await invoke("set_scan_roots", { roots });
+        setScanRoots(roots);
+        setEditingRoot(null);
+      } catch (err) {
+        setSettingsError(String(err));
+      }
     },
     [],
   );
+
+  const closeRepoDetail = useCallback(async () => {
+    if (selectedRepo) {
+      try {
+        await refreshRepo(selectedRepo.path);
+      } catch {
+        // The dashboard's existing status remains usable if the repo disappeared.
+      }
+    }
+    setSelectedRepo(null);
+  }, [refreshRepo, selectedRepo]);
 
   const toggleFilter = (health: RepoHealth) => {
     setActiveFilters((prev) => {
@@ -79,7 +98,7 @@ export default function Dashboard() {
     return (
       <RepoDetail
         repo={selectedRepo}
-        onClose={() => setSelectedRepo(null)}
+        onClose={closeRepoDetail}
       />
     );
   }
@@ -146,9 +165,9 @@ export default function Dashboard() {
         )}
       </div>
 
-      {error && (
+      {(error || settingsError) && (
         <div className="mb-4 rounded-md bg-red-900/30 border border-red-800 px-4 py-3 text-sm text-red-300">
-          {error}
+          {error || settingsError}
         </div>
       )}
 

@@ -11,6 +11,10 @@ function gitUrlToWeb(url: string | null): string | null {
   // https://github.com/user/repo.git -> https://github.com/user/repo
   try {
     const u = new URL(url);
+    if (u.protocol === "ssh:") {
+      return `https://${u.hostname}${u.pathname.replace(/\.git$/, "")}`;
+    }
+    if (u.protocol !== "http:" && u.protocol !== "https:") return null;
     const path = u.pathname.replace(/\.git$/, "");
     return `${u.protocol}//${u.host}${path}`;
   } catch {

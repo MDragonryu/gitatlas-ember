@@ -15,6 +15,12 @@ pub struct RepoInfo {
     pub remote_url: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct BulkOperationResult {
+    pub repos: Vec<RepoInfo>,
+    pub errors: Vec<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum RepoHealth {

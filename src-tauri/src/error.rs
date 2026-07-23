@@ -11,6 +11,9 @@ pub enum AppError {
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 
+    #[error("Serialization error: {0}")]
+    Serialization(#[from] serde_json::Error),
+
     #[error("{0}")]
     General(String),
 }

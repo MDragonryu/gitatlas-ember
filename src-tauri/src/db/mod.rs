@@ -2,7 +2,7 @@ pub mod models;
 pub mod queries;
 
 use rusqlite::Connection;
-use std::sync::Mutex;
+use std::sync::{Mutex, MutexGuard};
 
 use crate::error::AppError;
 
@@ -21,7 +21,7 @@ impl Database {
     }
 
     fn init_schema(&self) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.connection()?;
         conn.execute_batch(
             "CREATE TABLE IF NOT EXISTS repos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -43,5 +43,11 @@ impl Database {
             );",
         )?;
         Ok(())
+    }
+
+    fn connection(&self) -> Result<MutexGuard<'_, Connection>, AppError> {
+        self.conn
+            .lock()
+            .map_err(|_| AppError::General("Database lock was poisoned".to_string()))
     }
 }

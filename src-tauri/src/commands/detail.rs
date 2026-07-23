@@ -1,13 +1,18 @@
 use std::path::Path;
 
-use crate::db::models::{BranchInfo, CommitFileChange, CommitInfo, FileChange, GitProfile, RemoteInfo, StashEntry};
+use crate::db::models::{
+    BranchInfo, CommitFileChange, CommitInfo, FileChange, GitProfile, RemoteInfo, StashEntry,
+};
 use crate::error::AppError;
 use crate::git;
 
 // ── Commit log ──────────────────────────────────────────
 
 #[tauri::command]
-pub async fn get_commit_log(path: String, count: Option<usize>) -> Result<Vec<CommitInfo>, AppError> {
+pub async fn get_commit_log(
+    path: String,
+    count: Option<usize>,
+) -> Result<Vec<CommitInfo>, AppError> {
     let limit = count.unwrap_or(100);
     git::detail::get_commit_log(Path::new(&path), limit)
 }
@@ -25,7 +30,11 @@ pub async fn get_file_changes(path: String) -> Result<Vec<FileChange>, AppError>
 }
 
 #[tauri::command]
-pub async fn get_file_diff(path: String, file_path: String, staged: bool) -> Result<String, AppError> {
+pub async fn get_file_diff(
+    path: String,
+    file_path: String,
+    staged: bool,
+) -> Result<String, AppError> {
     git::detail::get_file_diff(Path::new(&path), &file_path, staged)
 }
 
@@ -113,7 +122,10 @@ pub async fn stash_drop(path: String, index: usize) -> Result<(), AppError> {
 // ── Commit files ─────────────────────────────────────────
 
 #[tauri::command]
-pub async fn get_commit_files(path: String, oid: String) -> Result<Vec<CommitFileChange>, AppError> {
+pub async fn get_commit_files(
+    path: String,
+    oid: String,
+) -> Result<Vec<CommitFileChange>, AppError> {
     git::detail::get_commit_files(Path::new(&path), &oid)
 }
 
@@ -127,7 +139,11 @@ pub async fn merge_branch(path: String, branch_name: String) -> Result<String, A
 // ── File history ─────────────────────────────────────────
 
 #[tauri::command]
-pub async fn get_file_history(path: String, file_path: String, count: Option<usize>) -> Result<Vec<CommitInfo>, AppError> {
+pub async fn get_file_history(
+    path: String,
+    file_path: String,
+    count: Option<usize>,
+) -> Result<Vec<CommitInfo>, AppError> {
     let limit = count.unwrap_or(50);
     git::detail::get_file_history(Path::new(&path), &file_path, limit)
 }
@@ -150,7 +166,11 @@ pub async fn remove_remote(path: String, name: String) -> Result<(), AppError> {
 }
 
 #[tauri::command]
-pub async fn rename_remote(path: String, old_name: String, new_name: String) -> Result<(), AppError> {
+pub async fn rename_remote(
+    path: String,
+    old_name: String,
+    new_name: String,
+) -> Result<(), AppError> {
     git::detail::rename_remote(Path::new(&path), &old_name, &new_name)
 }
 
@@ -169,7 +189,11 @@ pub async fn set_git_profile(path: String, name: String, email: String) -> Resul
 // ── Squash ──────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn squash_commits(path: String, count: usize, message: String) -> Result<String, AppError> {
+pub async fn squash_commits(
+    path: String,
+    count: usize,
+    message: String,
+) -> Result<String, AppError> {
     git::detail::squash_commits(Path::new(&path), count, &message)
 }
 

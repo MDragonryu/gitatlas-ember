@@ -12,8 +12,12 @@ export default function GitHubLink({ url, className = "h-4 w-4", onClick }: GitH
       e.preventDefault();
       e.stopPropagation();
       onClick?.(e);
-      const { open } = await import("@tauri-apps/plugin-shell");
-      await open(url);
+      try {
+        const { open } = await import("@tauri-apps/plugin-shell");
+        await open(url);
+      } catch (error) {
+        console.error("Failed to open repository URL", error);
+      }
     },
     [url, onClick],
   );
@@ -21,6 +25,7 @@ export default function GitHubLink({ url, className = "h-4 w-4", onClick }: GitH
   return (
     <button
       onClick={handleClick}
+      aria-label="Open repository website"
       className="shrink-0 text-slate-500 hover:text-white transition cursor-pointer"
       title="Open on GitHub"
     >

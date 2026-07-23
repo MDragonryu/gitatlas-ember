@@ -6,7 +6,7 @@ use crate::error::AppError;
 
 impl Database {
     pub fn upsert_repo(&self, repo: &RepoInfo) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.connection()?;
         conn.execute(
             "INSERT INTO repos (path, name, branch, ahead, behind, dirty_files, stash_count, health, last_checked, remote_url)
              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
@@ -37,7 +37,7 @@ impl Database {
     }
 
     pub fn get_all_repos(&self) -> Result<Vec<RepoInfo>, AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.connection()?;
         let mut stmt = conn.prepare(
             "SELECT id, path, name, branch, ahead, behind, dirty_files, stash_count, health, last_checked, remote_url FROM repos ORDER BY name",
         )?;
@@ -62,7 +62,7 @@ impl Database {
     }
 
     pub fn clear_repos(&self) -> Result<(), AppError> {
-        let conn = self.conn.lock().unwrap();
+        let conn = self.connection()?;
         conn.execute("DELETE FROM repos", [])?;
         Ok(())
     }

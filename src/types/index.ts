@@ -1,4 +1,4 @@
-export type { RepoInfo, RepoHealth } from "./repo";
+export type { BulkOperationResult, RepoInfo, RepoHealth } from "./repo";
 export type {
   CommitInfo,
   RefLabel,

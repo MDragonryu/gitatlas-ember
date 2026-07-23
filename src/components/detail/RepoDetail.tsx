@@ -29,36 +29,53 @@ export default function RepoDetail({ repo, onClose }: RepoDetailProps) {
   const [squashMessage, setSquashMessage] = useState("");
 
   const detail = useRepoDetail(repo.path);
+  const {
+    loadBranches,
+    loadChanges,
+    loadCommits,
+    loadProfile,
+    loadReadme,
+    loadRemotes,
+    loadStashes,
+    setDiff,
+  } = detail;
 
   // Load data for the active tab
   useEffect(() => {
     if (activeTab === "changes") {
-      detail.loadChanges();
+      loadChanges();
     } else if (activeTab === "history") {
-      detail.loadCommits();
+      loadCommits();
     } else if (activeTab === "branches") {
-      detail.loadBranches();
-      detail.loadRemotes();
+      loadBranches();
+      loadRemotes();
     } else if (activeTab === "stashes") {
-      detail.loadStashes();
+      loadStashes();
     } else if (activeTab === "readme") {
-      detail.loadReadme();
+      loadReadme();
     }
     // Reset selections on tab switch
-    detail.setDiff("");
+    setDiff("");
     setSelectedCommit(null);
     setSelectedFile(null);
     setSelectedFileIndex(0);
     setSelectedCommitIndex(0);
     setShowSquash(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, repo.path]);
+  }, [
+    activeTab,
+    loadBranches,
+    loadChanges,
+    loadCommits,
+    loadReadme,
+    loadRemotes,
+    loadStashes,
+    setDiff,
+  ]);
 
   // Load profile on mount
   useEffect(() => {
-    detail.loadProfile();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [repo.path]);
+    loadProfile();
+  }, [loadProfile]);
 
   // Sync profile edit form when profile loads
   useEffect(() => {

@@ -1,5 +1,5 @@
 use git2::{
-    AnnotatedCommit, AutotagOption, Cred, CredentialType, FetchOptions, PushOptions,
+    AnnotatedCommit, AutotagOption, BranchType, Cred, CredentialType, FetchOptions, PushOptions,
     RemoteCallbacks, Repository,
 };
 use std::path::Path;
@@ -61,9 +61,7 @@ fn make_callbacks() -> RemoteCallbacks<'static> {
                     } else {
                         None
                     };
-                    if let Ok(cred) =
-                        Cred::ssh_key(user, pub_key.as_deref(), key, None)
-                    {
+                    if let Ok(cred) = Cred::ssh_key(user, pub_key.as_deref(), key, None) {
                         return Ok(cred);
                     }
                 }
@@ -73,9 +71,8 @@ fn make_callbacks() -> RemoteCallbacks<'static> {
         // HTTPS: try git credential helper via default credentials
         if allowed_types.contains(CredentialType::USER_PASS_PLAINTEXT) {
             if let Ok(cred) = Cred::credential_helper(
-                &git2::Config::open_default().unwrap_or_else(|_| {
-                    git2::Config::new().expect("failed to create git config")
-                }),
+                &git2::Config::open_default()
+                    .unwrap_or_else(|_| git2::Config::new().expect("failed to create git config")),
                 url,
                 username_from_url,
             ) {
@@ -94,9 +91,7 @@ fn make_callbacks() -> RemoteCallbacks<'static> {
             return Cred::default();
         }
 
-        Err(git2::Error::from_str(
-            "no authentication method available",
-        ))
+        Err(git2::Error::from_str("no authentication method available"))
     });
 
     callbacks
@@ -149,11 +144,11 @@ pub fn pull_rebase_repo(path: &Path) -> Result<(), AppError> {
         .ok_or_else(|| AppError::General("HEAD is not on a branch".to_string()))?
         .to_string();
 
-    let upstream_ref_name = format!("refs/remotes/origin/{}", branch_name);
-    let upstream_ref = repo.find_reference(&upstream_ref_name).map_err(|_| {
-        AppError::General(format!("No upstream branch found for {}", branch_name))
-    })?;
-    let upstream_commit = repo.reference_to_annotated_commit(&upstream_ref)?;
+    let upstream_branch = repo
+        .find_branch(&branch_name, BranchType::Local)?
+        .upstream()
+        .map_err(|_| AppError::General(format!("No upstream branch found for {branch_name}")))?;
+    let upstream_commit = repo.reference_to_annotated_commit(upstream_branch.get())?;
 
     rebase_onto(&repo, &upstream_commit)?;
 

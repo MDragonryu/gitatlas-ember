@@ -13,3 +13,8 @@ export interface RepoInfo {
   last_checked: string;
   remote_url: string | null;
 }
+
+export interface BulkOperationResult {
+  repos: RepoInfo[];
+  errors: string[];
+}

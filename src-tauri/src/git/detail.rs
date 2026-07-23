@@ -2,7 +2,10 @@ use git2::{DiffOptions, Repository, Sort, StatusOptions, StatusShow};
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::db::models::{BranchInfo, CommitFileChange, CommitInfo, FileChange, FileStatus, GitProfile, RefKind, RefLabel, RemoteInfo, StashEntry};
+use crate::db::models::{
+    BranchInfo, CommitFileChange, CommitInfo, FileChange, FileStatus, GitProfile, RefKind,
+    RefLabel, RemoteInfo, StashEntry,
+};
 use crate::error::AppError;
 
 // ── Commit log ──────────────────────────────────────────
@@ -24,12 +27,10 @@ pub fn get_commit_log(path: &Path, count: usize) -> Result<Vec<CommitInfo>, AppE
         }
     }
     // Push all local and remote branch tips
-    for branch_result in repo.branches(None).into_iter().flatten() {
-        if let Ok((branch, _)) = branch_result {
-            if let Ok(reference) = branch.into_reference().resolve() {
-                if let Some(oid) = reference.target() {
-                    let _ = revwalk.push(oid);
-                }
+    for (branch, _) in repo.branches(None).into_iter().flatten().flatten() {
+        if let Ok(reference) = branch.into_reference().resolve() {
+            if let Some(oid) = reference.target() {
+                let _ = revwalk.push(oid);
             }
         }
     }
@@ -52,7 +53,10 @@ pub fn get_commit_log(path: &Path, count: usize) -> Result<Vec<CommitInfo>, AppE
             date: chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
                 .map(|dt| dt.to_rfc3339())
                 .unwrap_or_default(),
-            parents: commit.parent_ids().map(|id| id.to_string()[..7].to_string()).collect(),
+            parents: commit
+                .parent_ids()
+                .map(|id| id.to_string()[..7].to_string())
+                .collect(),
             refs,
         });
     }
@@ -63,42 +67,43 @@ pub fn get_commit_log(path: &Path, count: usize) -> Result<Vec<CommitInfo>, AppE
 fn build_ref_map(repo: &Repository) -> HashMap<String, Vec<RefLabel>> {
     let mut map: HashMap<String, Vec<RefLabel>> = HashMap::new();
 
-    let head_oid = repo.head().ok().and_then(|h| h.target()).map(|o| o.to_string());
-    let head_name = repo.head().ok().and_then(|h| h.shorthand().map(String::from));
+    let head_oid = repo
+        .head()
+        .ok()
+        .and_then(|h| h.target())
+        .map(|o| o.to_string());
+    let head_name = repo
+        .head()
+        .ok()
+        .and_then(|h| h.shorthand().map(String::from));
 
     // Branches
     if let Ok(branches) = repo.branches(None) {
-        for branch_result in branches {
-            if let Ok((branch, branch_type)) = branch_result {
-                let name = match branch.name() {
-                    Ok(Some(n)) => n.to_string(),
-                    _ => continue,
-                };
-                let reference = match branch.into_reference().resolve() {
-                    Ok(r) => r,
-                    Err(_) => continue,
-                };
-                let oid = match reference.target() {
-                    Some(o) => o.to_string(),
-                    None => continue,
-                };
+        for (branch, branch_type) in branches.flatten() {
+            let name = match branch.name() {
+                Ok(Some(n)) => n.to_string(),
+                _ => continue,
+            };
+            let reference = match branch.into_reference().resolve() {
+                Ok(r) => r,
+                Err(_) => continue,
+            };
+            let oid = match reference.target() {
+                Some(o) => o.to_string(),
+                None => continue,
+            };
 
-                let is_head = head_oid.as_deref() == Some(&oid)
-                    && head_name.as_deref() == Some(&name);
+            let is_head = head_oid.as_deref() == Some(&oid) && head_name.as_deref() == Some(&name);
 
-                let kind = if is_head {
-                    RefKind::Head
-                } else if branch_type == git2::BranchType::Remote {
-                    RefKind::Remote
-                } else {
-                    RefKind::Local
-                };
+            let kind = if is_head {
+                RefKind::Head
+            } else if branch_type == git2::BranchType::Remote {
+                RefKind::Remote
+            } else {
+                RefKind::Local
+            };
 
-                map.entry(oid).or_default().push(RefLabel {
-                    name,
-                    kind,
-                });
-            }
+            map.entry(oid).or_default().push(RefLabel { name, kind });
         }
     }
 
@@ -110,7 +115,7 @@ fn build_ref_map(repo: &Repository) -> HashMap<String, Vec<RefLabel>> {
                 let oid = reference
                     .peel(git2::ObjectType::Commit)
                     .ok()
-                    .and_then(|obj| Some(obj.id().to_string()));
+                    .map(|obj| obj.id().to_string());
                 if let Some(oid) = oid {
                     map.entry(oid).or_default().push(RefLabel {
                         name: tag_name.to_string(),
@@ -414,9 +419,9 @@ pub fn checkout_branch(path: &Path, branch_name: &str) -> Result<(), AppError> {
     repo.checkout_tree(&object, None)?;
 
     if let Some(reference) = reference {
-        let ref_name = reference.name().ok_or_else(|| {
-            AppError::General("Invalid reference name".to_string())
-        })?;
+        let ref_name = reference
+            .name()
+            .ok_or_else(|| AppError::General("Invalid reference name".to_string()))?;
         repo.set_head(ref_name)?;
     } else {
         repo.set_head_detached(object.id())?;
@@ -460,7 +465,11 @@ pub fn get_stashes(path: &Path) -> Result<Vec<StashEntry>, AppError> {
 pub fn stash_save(path: &Path, message: &str) -> Result<(), AppError> {
     let mut repo = Repository::open(path)?;
     let sig = repo.signature()?;
-    let msg = if message.is_empty() { None } else { Some(message) };
+    let msg = if message.is_empty() {
+        None
+    } else {
+        Some(message)
+    };
     repo.stash_save(&sig, msg.unwrap_or("WIP"), None)?;
     Ok(())
 }
@@ -519,7 +528,8 @@ pub fn get_commit_files(path: &Path, oid_str: &str) -> Result<Vec<CommitFileChan
 
 pub fn merge_branch(path: &Path, branch_name: &str) -> Result<String, AppError> {
     let repo = Repository::open(path)?;
-    let branch_ref = repo.find_branch(branch_name, git2::BranchType::Local)
+    let branch_ref = repo
+        .find_branch(branch_name, git2::BranchType::Local)
         .or_else(|_| repo.find_branch(branch_name, git2::BranchType::Remote))?;
     let annotated = repo.reference_to_annotated_commit(branch_ref.get())?;
 
@@ -548,7 +558,9 @@ pub fn merge_branch(path: &Path, branch_name: &str) -> Result<String, AppError> 
     let mut index = repo.index()?;
     if index.has_conflicts() {
         repo.cleanup_state()?;
-        return Err(AppError::General("Merge has conflicts — resolve them manually".to_string()));
+        return Err(AppError::General(
+            "Merge has conflicts — resolve them manually".to_string(),
+        ));
     }
     let tree_oid = index.write_tree()?;
     let tree = repo.find_tree(tree_oid)?;
@@ -570,7 +582,11 @@ pub fn merge_branch(path: &Path, branch_name: &str) -> Result<String, AppError> 
 
 // ── File history ────────────────────────────────────────
 
-pub fn get_file_history(path: &Path, file_path: &str, count: usize) -> Result<Vec<CommitInfo>, AppError> {
+pub fn get_file_history(
+    path: &Path,
+    file_path: &str,
+    count: usize,
+) -> Result<Vec<CommitInfo>, AppError> {
     let repo = Repository::open(path)?;
     let ref_map = build_ref_map(&repo);
 
@@ -618,7 +634,10 @@ pub fn get_file_history(path: &Path, file_path: &str, count: usize) -> Result<Ve
                 date: chrono::DateTime::from_timestamp(commit.time().seconds(), 0)
                     .map(|dt| dt.to_rfc3339())
                     .unwrap_or_default(),
-                parents: commit.parent_ids().map(|id| id.to_string()[..7].to_string()).collect(),
+                parents: commit
+                    .parent_ids()
+                    .map(|id| id.to_string()[..7].to_string())
+                    .collect(),
                 refs,
             });
 
@@ -696,7 +715,9 @@ pub fn set_git_profile(path: &Path, name: &str, email: &str) -> Result<(), AppEr
 
 pub fn squash_commits(path: &Path, count: usize, message: &str) -> Result<String, AppError> {
     if count < 2 {
-        return Err(AppError::General("Need at least 2 commits to squash".to_string()));
+        return Err(AppError::General(
+            "Need at least 2 commits to squash".to_string(),
+        ));
     }
 
     let repo = Repository::open(path)?;
@@ -708,10 +729,14 @@ pub fn squash_commits(path: &Path, count: usize, message: &str) -> Result<String
     let mut current = head_commit.clone();
     for _ in 1..count {
         if current.parent_count() == 0 {
-            return Err(AppError::General("Not enough commits to squash".to_string()));
+            return Err(AppError::General(
+                "Not enough commits to squash".to_string(),
+            ));
         }
         if current.parent_count() > 1 {
-            return Err(AppError::General("Cannot squash across merge commits".to_string()));
+            return Err(AppError::General(
+                "Cannot squash across merge commits".to_string(),
+            ));
         }
         current = current.parent(0)?;
     }
@@ -742,12 +767,12 @@ pub fn squash_commits(path: &Path, count: usize, message: &str) -> Result<String
 
 pub fn get_pr_url(path: &Path) -> Result<String, AppError> {
     let repo = Repository::open(path)?;
-    let remote = repo.find_remote("origin").map_err(|_| {
-        AppError::General("No 'origin' remote found".to_string())
-    })?;
-    let url = remote.url().ok_or_else(|| {
-        AppError::General("Origin remote has no URL".to_string())
-    })?;
+    let remote = repo
+        .find_remote("origin")
+        .map_err(|_| AppError::General("No 'origin' remote found".to_string()))?;
+    let url = remote
+        .url()
+        .ok_or_else(|| AppError::General("Origin remote has no URL".to_string()))?;
 
     // Normalize SSH/HTTPS URL to base HTTPS URL
     let base = normalize_remote_url(url)?;
@@ -760,11 +785,17 @@ pub fn get_pr_url(path: &Path) -> Result<String, AppError> {
     let pr_url = if base.contains("github.com") {
         format!("{}/compare/{}?expand=1", base, branch)
     } else if base.contains("gitlab.com") || base.contains("gitlab") {
-        format!("{}/-/merge_requests/new?merge_request%5Bsource_branch%5D={}", base, branch)
+        format!(
+            "{}/-/merge_requests/new?merge_request%5Bsource_branch%5D={}",
+            base, branch
+        )
     } else if base.contains("bitbucket.org") {
         format!("{}/pull-requests/new?source={}", base, branch)
     } else {
-        return Err(AppError::General(format!("Unsupported git host in URL: {}", url)));
+        return Err(AppError::General(format!(
+            "Unsupported git host in URL: {}",
+            url
+        )));
     };
 
     Ok(pr_url)
@@ -799,9 +830,8 @@ pub fn get_readme(path: &Path) -> Result<Option<String>, AppError> {
     for name in &candidates {
         let file_path = path.join(name);
         if file_path.is_file() {
-            let content = std::fs::read_to_string(&file_path).map_err(|e| {
-                AppError::General(format!("Failed to read {}: {}", name, e))
-            })?;
+            let content = std::fs::read_to_string(&file_path)
+                .map_err(|e| AppError::General(format!("Failed to read {}: {}", name, e)))?;
             return Ok(Some(content));
         }
     }

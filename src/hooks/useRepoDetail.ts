@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import type {
   CommitInfo,
@@ -28,6 +28,7 @@ export function useRepoDetail(repoPath: string) {
   const [fileHistoryPath, setFileHistoryPath] = useState<string | null>(null);
   const [remotes, setRemotes] = useState<RemoteInfo[]>([]);
   const [profile, setProfile] = useState<GitProfile | null>(null);
+  const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const withError = useCallback(async (fn: () => Promise<void>) => {
     setError(null);
@@ -39,9 +40,20 @@ export function useRepoDetail(repoPath: string) {
   }, []);
 
   const showSuccess = useCallback((msg: string) => {
+    if (successTimer.current) clearTimeout(successTimer.current);
     setSuccessMessage(msg);
-    setTimeout(() => setSuccessMessage(null), 3000);
+    successTimer.current = setTimeout(() => {
+      setSuccessMessage(null);
+      successTimer.current = null;
+    }, 3000);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (successTimer.current) clearTimeout(successTimer.current);
+    },
+    [],
+  );
 
   // ── Commits ──
 

@@ -5,8 +5,8 @@ use tauri::State;
 use crate::cache;
 use crate::db::models::RepoInfo;
 use crate::error::AppError;
-use crate::AppState;
 use crate::scanner;
+use crate::AppState;
 
 #[tauri::command]
 pub async fn scan_directories(
@@ -24,16 +24,14 @@ pub async fn scan_directories(
     }
 
     // Write to disk cache for fast startup next time
-    cache::save(&repos);
+    cache::save(&repos)?;
 
     Ok(repos)
 }
 
 #[tauri::command]
-pub async fn load_cached_repos(
-    state: State<'_, AppState>,
-) -> Result<Vec<RepoInfo>, AppError> {
-    let repos = cache::load();
+pub async fn load_cached_repos(state: State<'_, AppState>) -> Result<Vec<RepoInfo>, AppError> {
+    let repos = cache::load()?;
     if !repos.is_empty() {
         let db = &state.db;
         db.clear_repos()?;
@@ -46,7 +44,7 @@ pub async fn load_cached_repos(
 
 #[tauri::command]
 pub async fn get_scan_roots() -> Result<Vec<String>, AppError> {
-    let config = cache::load_config();
+    let config = cache::load_config()?;
     if !config.scan_roots.is_empty() {
         return Ok(config.scan_roots);
     }
@@ -59,8 +57,8 @@ pub async fn get_scan_roots() -> Result<Vec<String>, AppError> {
 
 #[tauri::command]
 pub async fn set_scan_roots(roots: Vec<String>) -> Result<(), AppError> {
-    let mut config = cache::load_config();
+    let mut config = cache::load_config()?;
     config.scan_roots = roots;
-    cache::save_config(&config);
+    cache::save_config(&config)?;
     Ok(())
 }
