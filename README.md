@@ -4,7 +4,10 @@ A desktop app for developers who work across many Git repositories. GitAtlas sca
 repo, and shows their status on a single dashboard — branch names, ahead/behind counts, uncommitted changes, and health
 at a glance. Drill into any repo for a full-featured Git UI with commit history, staging, branching, stashing, and more.
 
-Built with Tauri v2 (Rust) and React. [View on GitHub](https://github.com/grahambrooks/gitatlas)
+This repository is a fork of the original [GitAtlas](https://github.com/grahambrooks/gitatlas), customized into my
+personal **Ember** version with adjustments that I consider improvements or that better fit my workflow and style.
+
+Built with Tauri v2 (Rust) and React.
 
 ## Features
 
